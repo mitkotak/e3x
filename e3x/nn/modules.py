@@ -413,7 +413,7 @@ class Tensor(nn.Module):
   dtype: Optional[Dtype] = None
   param_dtype: Dtype = jnp.float32
   precision: PrecisionLike = None
-  kernel_init: InitializerFn = default_tensor_kernel_init
+  # kernel_init: InitializerFn = default_tensor_kernel_init
 
   @nn.compact
   def __call__(
@@ -466,7 +466,7 @@ class Tensor(nn.Module):
       )
 
     # Extract number of features from size of axis -1.
-    features = inputs1.shape[-1]
+    # features = inputs1.shape[-1]
 
     # If both inputs contain no pseudotensors and at least one input or the
     # output has max_degree == 0, the tensor product will not produce
@@ -486,19 +486,19 @@ class Tensor(nn.Module):
     num_parity3 = 2 if include_pseudotensors else 1
 
     # Initialize parameters.
-    kernel_shape = (
-        num_parity1,
-        max_degree1 + 1,
-        num_parity2,
-        max_degree2 + 1,
-        num_parity3,
-        max_degree3 + 1,
-        features,
-    )
-    kernel = self.param(
-        'kernel', self.kernel_init, kernel_shape, self.param_dtype
-    )
-    (kernel,) = promote_dtype(kernel, dtype=self.dtype)
+    # kernel_shape = (
+    #     num_parity1,
+    #     max_degree1 + 1,
+    #     num_parity2,
+    #     max_degree2 + 1,
+    #     num_parity3,
+    #     max_degree3 + 1,
+    #     features,
+    # )
+    # kernel = self.param(
+    #     'kernel', self.kernel_init, kernel_shape, self.param_dtype
+    # )
+    # (kernel,) = promote_dtype(kernel, dtype=self.dtype)
 
     # If any of the two inputs or the output do not contain pseudotensors, the
     # forbidded coupling paths correspond to "mixed entries within array
@@ -520,31 +520,32 @@ class Tensor(nn.Module):
       )
 
       # Mask for zeroing out forbidden (parity violating) coupling paths.
-      if mixed_coupling_paths:
-        mask = _make_tensor_product_mask(kernel_shape[:-1])
-      else:
-        mask = 1
+      # if mixed_coupling_paths:
+      #   mask = _make_tensor_product_mask(kernel_shape[:-1])
+      # else:
+      # mask = 1
 
       # Indices for expanding shape of kernel.
-      idx1 = _duplication_indices_for_max_degree(max_degree1)
-      idx2 = _duplication_indices_for_max_degree(max_degree2)
-      idx3 = _duplication_indices_for_max_degree(max_degree3)
+      # idx1 = _duplication_indices_for_max_degree(max_degree1)
+      # idx2 = _duplication_indices_for_max_degree(max_degree2)
+      # idx3 = _duplication_indices_for_max_degree(max_degree3)
 
     # Mask kernel (only necessary for mixed coupling paths)
-    if mixed_coupling_paths:
-      kernel *= mask
+    # if mixed_coupling_paths:
+    #   kernel *= mask
 
     # Expand shape (necessary for correct broadcasting).
-    kernel = jnp.take(kernel, idx1, axis=1, indices_are_sorted=True)
-    kernel = jnp.take(kernel, idx2, axis=3, indices_are_sorted=True)
-    kernel = jnp.take(kernel, idx3, axis=5, indices_are_sorted=True)
+    # kernel = jnp.take(kernel, idx1, axis=1, indices_are_sorted=True)
+    # kernel = jnp.take(kernel, idx2, axis=3, indices_are_sorted=True)
+    # kernel = jnp.take(kernel, idx3, axis=5, indices_are_sorted=True)
 
     if mixed_coupling_paths:
       return jnp.einsum(
-          '...plf,...qmf,plqmrnf,lmn->...rnf',
+          # '...plf,...qmf,plqmrnf,lmn->...rnf',
+          '...plf,...qmf,lmn->...nf',
           inputs1,
           inputs2,
-          kernel,
+          # kernel,
           cg,
           precision=self.precision,
           optimize='optimal',
@@ -556,10 +557,11 @@ class Tensor(nn.Module):
       ) -> Float[Array, '... (max_degree3+1)**2 num_features']:
         """Helper function for coupling slice (i, j, k)."""
         return jnp.einsum(
-            '...lf,...mf,lmnf,lmn->...nf',
+            # '...lf,...mf,lmnf,lmn->...nf',
+            '...lf,...mf,lmn->...nf',
             inputs1[..., i, :, :],
             inputs2[..., j, :, :],
-            kernel[i, :, j, :, k, :, :],
+            # kernel[i, :, j, :, k, :, :],
             cg,
             precision=self.precision,
             optimize='optimal',
